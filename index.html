@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>インフレRPG風</title>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+    overflow: hidden;
+  }
+  #game {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  #top {
+    padding: 6px;
+    background: #222;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  #map {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    gap: 2px;
+    padding: 4px;
+    background: #000;
+  }
+  .tile {
+    border-radius: 4px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .grass { background: #2d7a2d; }
+  .forest { background: #155015; }
+  .desert { background: #b89b38; }
+  .lava { background: #8b1a1a; }
+  .town { background: #3657b8; }
+  .boss { background: #551177; }
+  .wall { background: #333; }
+  .player { outline: 3px solid white; }
+  #log {
+    height: 82px;
+    overflow-y: auto;
+    background: #181818;
+    padding: 6px;
+    font-size: 13px;
+    text-align: left;
+  }
+  #buttons {
+    background: #222;
+    padding: 8px;
+  }
+  button {
+    font-size: 16px;
+    margin: 3px;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 8px;
+    background: #444;
+    color: white;
+  }
+  button:active {
+    background: #777;
+  }
+  .ctrl {
+    width: 56px;
+    height: 44px;
+  }
+  .stat {
+    background: #2f5f2f;
+  }
+  .danger {
+    background: #8b2222;
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="top"></div>
+  <div id="map"></div>
+  <div id="log"></div>
+
+  <div id="buttons">
+    <div>
+      <button class="ctrl" onclick="move(0,-1)">▲</button>
+    </div>
+    <div>
+      <button class="ctrl" onclick="move(-1,0)">◀</button>
+      <button class="ctrl" onclick="move(0,1)">▼</button>
+      <button class="ctrl" onclick="move(1,0)">▶</button>
+    </div>
+    <div>
+      <button class="stat" onclick="addStat('atk')">攻撃+1</button>
+      <button class="stat" onclick="addStat('hp')">HP+1</button>
+      <button class="stat" onclick="addStat('def')">防御+1</button>
+    </div>
+    <div>
+      <button onclick="healTown()">町で回復</button>
+      <button onclick="saveGame()">セーブ</button>
+      <button class="danger" onclick="resetGame()">リセット</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SAVE_KEY = "inflation_rpg_map_v1";
+
+let player = {
+  x: 1,
+  y: 1,
+  level: 1,
+  exp: 0,
+  nextExp: 20,
+  gold: 0,
+  hp: 100,
+  maxHp: 100,
+  atk: 10,
+  def: 3,
+  points: 0,
+  area: 1,
+  kills: 0
+};
+
+const mapData = [
+  "##########",
+  "#gggggffb#",
+  "#gggggffg#",
+  "#ggTggggg#",
+  "#gggggddd#",
+  "#ffffgddd#",
+  "#fggggddd#",
+  "#ggggglll#",
+  "#gggggllB#",
+  "##########"
+];
+
+const tileInfo = {
+  "#": { cls: "wall", icon: "⬛" },
+  "g": { cls: "grass", icon: "" },
+  "f": { cls: "forest", icon: "🌲" },
+  "d": { cls: "desert", icon: "🏜️" },
+  "l": { cls: "lava", icon: "🔥" },
+  "T": { cls: "town", icon: "🏘️" },
+  "b": { cls: "boss", icon: "👹" },
+  "B": { cls: "boss", icon: "🐉" }
+};
+
+function fmt(n) {
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + "兆";
+  if (n >= 1e8) return (n / 1e8).toFixed(2) + "億";
+  if (n >= 1e4) return (n / 1e4).toFixed(2) + "万";
+  return Math.floor(n).toString();
+}
+
+function log(text) {
+  const box = document.getElementById("log");
+  box.innerHTML = text + "<br>" + box.innerHTML;
+}
+
+function draw() {
+  const map = document.getElementById("map");
+  map.innerHTML = "";
+
+  for (let y = 0; y < 10; y++) {
+    for (let x = 0; x < 10; x++) {
+      const ch = mapData[y][x];
+      const info = tileInfo[ch];
+      const div = document.createElement("div");
+      div.className = "tile " + info.cls;
+
+      if (player.x === x && player.y === y) {
+        div.classList.add("player");
+        div.textContent = "🧍";
+      } else {
+        div.textContent = info.icon;
+      }
+
+      map.appendChild(div);
+    }
+  }
+
+  document.getElementById("top").innerHTML =
+    `Lv:${fmt(player.level)} / HP:${fmt(player.hp)}|${fmt(player.maxHp)} / 攻:${fmt(player.atk)} / 防:${fmt(player.def)}<br>` +
+    `EXP:${fmt(player.exp)}/${fmt(player.nextExp)} / 金:${fmt(player.gold)} / 強化P:${player.points} / 撃破:${player.kills} / エリア:${player.area}`;
+}
+
+function getTile(x, y) {
+  return mapData[y][x];
+}
+
+function move(dx, dy) {
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+  const tile = getTile(nx, ny);
+
+  if (tile === "#") {
+    log("壁がある。");
+    return;
+  }
+
+  player.x = nx;
+  player.y = ny;
+
+  if (tile === "T") {
+    log("町に着いた。回復できる。");
+  } else if (tile === "b" || tile === "B") {
+    battle(true, tile);
+  } else {
+    if (Math.random() < 0.75) battle(false, tile);
+  }
+
+  draw();
+  autoSave();
+}
+
+function enemyByTile(tile, boss = false) {
+  let base = 1;
+  let name = "スライム";
+
+  if (tile === "g") { base = 1; name = "スライム"; }
+  if (tile === "f") { base = 5; name = "森の魔物"; }
+  if (tile === "d") { base = 15; name = "砂漠の獣"; }
+  if (tile === "l") { base = 40; name = "溶岩ドラゴン"; }
+  if (tile === "b") { base = 25; name = "中ボス"; }
+  if (tile === "B") { base = 80; name = "魔王"; }
+
+  base *= player.area;
+
+  let hp = Math.floor(40 * base * Math.pow(1.18, base));
+  let atk = Math.floor(8 * base * Math.pow(1.08, base));
+  let exp = Math.floor(15 * base * Math.pow(1.16, base));
+  let gold = Math.floor(10 * base * Math.pow(1.14, base));
+
+  if (boss) {
+    hp *= 5;
+    atk *= 2;
+    exp *= 8;
+    gold *= 8;
+  }
+
+  return { name, hp, atk, exp, gold };
+}
+
+function battle(isBoss, tile) {
+  let enemy = enemyByTile(tile, isBoss);
+  let enemyHp = enemy.hp;
+  let turn = 0;
+
+  while (enemyHp > 0 && player.hp > 0 && turn < 50) {
+    let dmg = Math.max(1, player.atk - Math.floor(enemy.atk * 0.15));
+    enemyHp -= dmg;
+
+    if (enemyHp <= 0) break;
+
+    let taken = Math.max(1, enemy.atk - player.def);
+    player.hp -= taken;
+    turn++;
+  }
+
+  if (player.hp <= 0) {
+    player.hp = Math.floor(player.maxHp * 0.5);
+    player.x = 3;
+    player.y = 3;
+    log("負けた……町に戻された。HP半分で復活。");
+    return;
+  }
+
+  player.exp += enemy.exp;
+  player.gold += enemy.gold;
+  player.kills++;
+
+  log(`${enemy.name}を倒した！ EXP+${fmt(enemy.exp)} / 金+${fmt(enemy.gold)}`);
+
+  levelUpCheck();
+
+  if (isBoss) {
+    player.area++;
+    player.atk = Math.floor(player.atk * 1.35);
+    player.maxHp = Math.floor(player.maxHp * 1.4);
+    player.hp = player.maxHp;
+    log(`ボス撃破！ エリア${player.area}解放！能力も上昇！`);
+  }
+}
+
+function levelUpCheck() {
+  let count = 0;
+
+  while (player.exp >= player.nextExp) {
+    player.exp -= player.nextExp;
+    player.level++;
+    player.points += 3;
+
+    player.maxHp = Math.floor(player.maxHp * 1.08 + 20);
+    player.atk = Math.floor(player.atk * 1.07 + 5);
+    player.def = Math.floor(player.def * 1.05 + 2);
+    player.hp = player.maxHp;
+
+    player.nextExp = Math.floor(player.nextExp * 1.35 + 30);
+    count++;
+  }
+
+  if (count > 0) {
+    log(`${count}レベルアップ！ Lv.${fmt(player.level)}！ 強化P+${count * 3}`);
+  }
+}
+
+function addStat(type) {
+  if (player.points <= 0) {
+    log("強化ポイントが足りない。");
+    return;
+  }
+
+  player.points--;
+
+  if (type === "atk") {
+    player.atk = Math.floor(player.atk * 1.18 + 10);
+    log("攻撃力を強化した！");
+  }
+
+  if (type === "hp") {
+    player.maxHp = Math.floor(player.maxHp * 1.25 + 50);
+    player.hp = player.maxHp;
+    log("最大HPを強化した！");
+  }
+
+  if (type === "def") {
+    player.def = Math.floor(player.def * 1.2 + 5);
+    log("防御力を強化した！");
+  }
+
+  draw();
+  autoSave();
+}
+
+function healTown() {
+  if (getTile(player.x, player.y) !== "T") {
+    log("町の上でしか回復できない。");
+    return;
+  }
+
+  player.hp = player.maxHp;
+  log("全回復した！");
+  draw();
+  autoSave();
+}
+
+function saveGame() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
+  log("セーブした！");
+}
+
+function autoSave() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
+}
+
+function loadGame() {
+  const data = localStorage.getItem(SAVE_KEY);
+  if (data) {
+    player = JSON.parse(data);
+    log("セーブデータを読み込んだ。");
+  } else {
+    log("ゲーム開始！敵に触れてレベルを爆上げしよう。");
+  }
+}
+
+function resetGame() {
+  if (!confirm("本当にデータを消す？")) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
+loadGame();
+draw();
+</script>
+</body>
+</html>
