@@ -1,387 +1,652 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>インフレRPG風</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自由育成ハクスラRPG</title>
 <style>
-  body {
-    margin: 0;
-    background: #111;
-    color: white;
-    font-family: sans-serif;
-    text-align: center;
-    overflow: hidden;
-  }
-  #game {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  #top {
-    padding: 6px;
-    background: #222;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  #map {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(10, 1fr);
-    gap: 2px;
-    padding: 4px;
-    background: #000;
-  }
-  .tile {
-    border-radius: 4px;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .grass { background: #2d7a2d; }
-  .forest { background: #155015; }
-  .desert { background: #b89b38; }
-  .lava { background: #8b1a1a; }
-  .town { background: #3657b8; }
-  .boss { background: #551177; }
-  .wall { background: #333; }
-  .player { outline: 3px solid white; }
-  #log {
-    height: 82px;
-    overflow-y: auto;
-    background: #181818;
-    padding: 6px;
-    font-size: 13px;
-    text-align: left;
-  }
-  #buttons {
-    background: #222;
-    padding: 8px;
-  }
-  button {
-    font-size: 16px;
-    margin: 3px;
-    padding: 9px 12px;
-    border: none;
-    border-radius: 8px;
-    background: #444;
-    color: white;
-  }
-  button:active {
-    background: #777;
-  }
-  .ctrl {
-    width: 56px;
-    height: 44px;
-  }
-  .stat {
-    background: #2f5f2f;
-  }
-  .danger {
-    background: #8b2222;
-  }
+body{
+  margin:0;
+  background:#101014;
+  color:#fff;
+  font-family:system-ui,sans-serif;
+}
+.wrap{
+  max-width:760px;
+  margin:auto;
+  padding:10px;
+}
+h1{
+  font-size:22px;
+  margin:8px 0;
+}
+.panel{
+  background:#1c1c26;
+  border:1px solid #333;
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+}
+button{
+  border:0;
+  border-radius:9px;
+  padding:9px 11px;
+  margin:3px;
+  background:#3c3c4d;
+  color:#fff;
+  font-weight:bold;
+}
+button:active{background:#666;}
+button:disabled{
+  background:#222;
+  color:#777;
+}
+.good{background:#207a3a;}
+.bad{background:#8a2b2b;}
+.gold{background:#99751e;}
+.blue{background:#2563a8;}
+.purple{background:#6730a0;}
+.small{font-size:12px;color:#ccc;}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:6px;
+}
+.item{
+  background:#272735;
+  padding:7px;
+  border-radius:8px;
+  margin:5px 0;
+}
+.log{
+  height:170px;
+  overflow:auto;
+  font-size:13px;
+  background:#09090d;
+  border-radius:8px;
+  padding:8px;
+}
+hr{border-color:#333;}
 </style>
 </head>
 <body>
-<div id="game">
-  <div id="top"></div>
-  <div id="map"></div>
-  <div id="log"></div>
+<div class="wrap">
+<h1>自由育成ハクスラRPG</h1>
 
-  <div id="buttons">
-    <div>
-      <button class="ctrl" onclick="move(0,-1)">▲</button>
-    </div>
-    <div>
-      <button class="ctrl" onclick="move(-1,0)">◀</button>
-      <button class="ctrl" onclick="move(0,1)">▼</button>
-      <button class="ctrl" onclick="move(1,0)">▶</button>
-    </div>
-    <div>
-      <button class="stat" onclick="addStat('atk')">攻撃+1</button>
-      <button class="stat" onclick="addStat('hp')">HP+1</button>
-      <button class="stat" onclick="addStat('def')">防御+1</button>
-    </div>
-    <div>
-      <button onclick="healTown()">町で回復</button>
-      <button onclick="saveGame()">セーブ</button>
-      <button class="danger" onclick="resetGame()">リセット</button>
-    </div>
-  </div>
+<div class="panel" id="status"></div>
+
+<div class="panel">
+  <button class="good" onclick="startDungeon()">選択中ダンジョンに挑戦</button>
+  <button class="blue" onclick="nextFloor()">次の階層へ進む</button>
+  <button class="gold" onclick="openShop()">ショップ更新</button>
+  <button onclick="saveGame()">セーブ</button>
+  <button class="bad" onclick="resetGame()">リセット</button>
+</div>
+
+<div class="panel">
+  <b>ダンジョン選択</b>
+  <div id="dungeons"></div>
+</div>
+
+<div class="panel">
+  <b>ステータス振り</b><br>
+  <button onclick="addStat('hp')">HP +1</button>
+  <button onclick="addStat('atk')">攻撃 +1</button>
+  <button onclick="addStat('def')">防御 +1</button>
+  <button onclick="addStat('spd')">素早さ +1</button>
+  <button onclick="addStat('luk')">運 +1</button>
+</div>
+
+<div class="panel">
+  <b>装備</b>
+  <div id="equips"></div>
+</div>
+
+<div class="panel">
+  <b>バッグ</b>
+  <div id="bag"></div>
+</div>
+
+<div class="panel">
+  <b>ショップ</b>
+  <div id="shop"></div>
+</div>
+
+<div class="panel">
+  <b>ログ</b>
+  <div class="log" id="log"></div>
+</div>
 </div>
 
 <script>
-const SAVE_KEY = "inflation_rpg_map_v1";
+const SAVE_KEY = "free_build_hackslash_v1";
 
 let player = {
-  x: 1,
-  y: 1,
-  level: 1,
-  exp: 0,
-  nextExp: 20,
-  gold: 0,
-  hp: 100,
-  maxHp: 100,
-  atk: 10,
-  def: 3,
-  points: 0,
-  area: 1,
-  kills: 0
+  lv:1,
+  exp:0,
+  nextExp:20,
+  gold:100,
+  point:0,
+  base:{hp:100, atk:10, def:5, spd:5, luk:1},
+  dungeon:1,
+  unlocked:1,
+  floor:0,
+  inDungeon:false,
+  bag:[],
+  shop:[],
+  equip:{
+    head:null,
+    body:null,
+    arm:null,
+    foot:null,
+    weapon:null,
+    slot1:null,
+    slot2:null,
+    slot3:null,
+    slot4:null,
+    slot5:null,
+    slot6:null
+  }
 };
 
-const mapData = [
-  "##########",
-  "#gggggffb#",
-  "#gggggffg#",
-  "#ggTggggg#",
-  "#gggggddd#",
-  "#ffffgddd#",
-  "#fggggddd#",
-  "#ggggglll#",
-  "#gggggllB#",
-  "##########"
-];
-
-const tileInfo = {
-  "#": { cls: "wall", icon: "⬛" },
-  "g": { cls: "grass", icon: "" },
-  "f": { cls: "forest", icon: "🌲" },
-  "d": { cls: "desert", icon: "🏜️" },
-  "l": { cls: "lava", icon: "🔥" },
-  "T": { cls: "town", icon: "🏘️" },
-  "b": { cls: "boss", icon: "👹" },
-  "B": { cls: "boss", icon: "🐉" }
+const slotName = {
+  head:"頭",
+  body:"体",
+  arm:"腕",
+  foot:"足",
+  weapon:"武器",
+  slot1:"装備枠1",
+  slot2:"装備枠2",
+  slot3:"装備枠3",
+  slot4:"装備枠4",
+  slot5:"装備枠5",
+  slot6:"装備枠6"
 };
 
-function fmt(n) {
-  if (n >= 1e12) return (n / 1e12).toFixed(2) + "兆";
-  if (n >= 1e8) return (n / 1e8).toFixed(2) + "億";
-  if (n >= 1e4) return (n / 1e4).toFixed(2) + "万";
-  return Math.floor(n).toString();
+const mainSlots = ["head","body","arm","foot","weapon"];
+const runeSlots = ["slot1","slot2","slot3","slot4","slot5","slot6"];
+
+function fmt(n){
+  if(n>=1e12)return (n/1e12).toFixed(2)+"兆";
+  if(n>=1e8)return (n/1e8).toFixed(2)+"億";
+  if(n>=1e4)return (n/1e4).toFixed(2)+"万";
+  return Math.floor(n);
 }
 
-function log(text) {
-  const box = document.getElementById("log");
-  box.innerHTML = text + "<br>" + box.innerHTML;
+function log(t){
+  document.getElementById("log").innerHTML = t + "<br>" + document.getElementById("log").innerHTML;
 }
 
-function draw() {
-  const map = document.getElementById("map");
-  map.innerHTML = "";
+function rand(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min;
+}
 
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
-      const ch = mapData[y][x];
-      const info = tileInfo[ch];
-      const div = document.createElement("div");
-      div.className = "tile " + info.cls;
+function chance(p){
+  return Math.random() < p;
+}
 
-      if (player.x === x && player.y === y) {
-        div.classList.add("player");
-        div.textContent = "🧍";
-      } else {
-        div.textContent = info.icon;
-      }
-
-      map.appendChild(div);
+function getBonus(){
+  let b = {hp:0,atk:0,def:0,spd:0,luk:0,crit:0,double:0,evade:0,exp:0,gold:0,drop:0};
+  Object.values(player.equip).forEach(it=>{
+    if(!it)return;
+    for(let k in it.stats)b[k]=(b[k]||0)+it.stats[k];
+    if(it.special){
+      b[it.special.type]=(b[it.special.type]||0)+it.special.value;
     }
+  });
+  return b;
+}
+
+function getStats(){
+  const b = getBonus();
+  let s = {};
+  for(let k of ["hp","atk","def","spd","luk"]){
+    s[k] = player.base[k] + (b[k]||0);
   }
 
-  document.getElementById("top").innerHTML =
-    `Lv:${fmt(player.level)} / HP:${fmt(player.hp)}|${fmt(player.maxHp)} / 攻:${fmt(player.atk)} / 防:${fmt(player.def)}<br>` +
-    `EXP:${fmt(player.exp)}/${fmt(player.nextExp)} / 金:${fmt(player.gold)} / 強化P:${player.points} / 撃破:${player.kills} / エリア:${player.area}`;
+  for(let k of ["hp","atk","def","spd","luk"]){
+    let percent = b[k+"Pct"] || 0;
+    s[k] = Math.floor(s[k] * (1 + percent / 100));
+  }
+
+  s.crit = Math.min(50, 5 + (s.luk * 0.03) + (b.crit||0));
+  s.double = Math.min(50, b.double||0);
+  s.evade = Math.min(40, b.evade||0);
+  s.expBonus = b.exp||0;
+  s.goldBonus = b.gold||0;
+  s.dropBonus = Math.min(20, s.luk * 0.05 + (b.drop||0));
+  return s;
 }
 
-function getTile(x, y) {
-  return mapData[y][x];
+function rarityByDungeon(d, source){
+  let r = Math.random()*100;
+  let bonus = source==="boss" ? 8 : source==="rare" ? 5 : 0;
+  let power = d + bonus;
+
+  if(power >= 80 && r < 0.03) return "神域";
+  if(power >= 50 && r < 0.2) return "古代";
+  if(power >= 31 && r < 1) return "神話";
+  if(power >= 16 && r < 3) return "レジェンド";
+  if(power >= 8 && r < 8) return "エピック";
+  if(power >= 3 && r < 20) return "レア";
+  return "ノーマル";
 }
 
-function move(dx, dy) {
-  const nx = player.x + dx;
-  const ny = player.y + dy;
-  const tile = getTile(nx, ny);
+function rarityMul(r){
+  return {
+    "ノーマル":1,
+    "レア":1.4,
+    "エピック":2.1,
+    "レジェンド":3.3,
+    "神話":5,
+    "古代":8,
+    "神域":13
+  }[r];
+}
 
-  if (tile === "#") {
-    log("壁がある。");
+function makeSpecial(d, source){
+  let rate = source==="boss" ? 0.15 : source==="rare" ? 0.1 : 0.05;
+  if(!chance(rate))return null;
+
+  const list = ["hpPct","atkPct","defPct","spdPct","lukPct","crit","double","exp","gold"];
+  const type = list[rand(0,list.length-1)];
+  const value = rand(2, Math.max(4, Math.floor(d/3)+3));
+  return {type,value};
+}
+
+function specialText(sp){
+  if(!sp)return "";
+  const n = {
+    hpPct:"HP",
+    atkPct:"攻撃",
+    defPct:"防御",
+    spdPct:"素早さ",
+    lukPct:"運",
+    crit:"会心率",
+    double:"連撃率",
+    exp:"経験値",
+    gold:"ゴールド"
+  }[sp.type];
+  return ` / 特殊:${n}+${sp.value}%`;
+}
+
+function makeEquipment(d, source="normal"){
+  let isRune = chance(0.35);
+  if(source==="rare")isRune = chance(0.55);
+  if(source==="boss")isRune = chance(0.45);
+
+  if(isRune)return makeRune(d,source);
+
+  const slot = mainSlots[rand(0,mainSlots.length-1)];
+  const rarity = rarityByDungeon(d,source);
+  const mul = rarityMul(rarity);
+  const base = Math.floor((d*6 + rand(1,8)) * mul);
+
+  let stats = {};
+  if(slot==="head")stats.hp = base*8;
+  if(slot==="body")stats.def = base;
+  if(slot==="arm")stats.atk = base;
+  if(slot==="foot")stats.spd = base;
+  if(slot==="weapon")stats.atk = base*2;
+
+  let names = {
+    head:"兜",
+    body:"鎧",
+    arm:"籠手",
+    foot:"靴",
+    weapon:"剣"
+  };
+
+  let prefix = source==="boss" ? "ボスの" : source==="rare" ? "幻の" : "";
+  return {
+    id:Date.now()+Math.random(),
+    name:`${prefix}${rarity}${names[slot]}+${d}`,
+    slot,
+    rarity,
+    stats,
+    special:makeSpecial(d,source),
+    price:Math.floor(base*35)
+  };
+}
+
+function makeRune(d,source="normal"){
+  const r = Math.random();
+  let name = "";
+  let stats = {};
+  let rarity = rarityByDungeon(d,source);
+  let power = Math.floor(d * rarityMul(rarity));
+
+  if(d >= 80 && source==="boss" && chance(0.0005)){
+    name = "神のルーン";
+    stats = {hp:power*100, atk:power*15, def:power*15, spd:power*15, luk:power*15};
+    rarity = "神域";
+  }else if(d >= 40 && r < 0.08){
+    let lv = Math.min(3, rand(1, Math.floor(d/40)+1));
+    name = `複合ルーンLv${lv}`;
+    stats = {hp:power*10*lv, atk:power*2*lv, def:power*2*lv, spd:power*2*lv, luk:power*2*lv};
+  }else if(r < 0.18){
+    const type = ["exp","gold","double","crit","evade"][rand(0,4)];
+    const lv = rand(1,3);
+    const label = {exp:"経験値増幅",gold:"獲得ゴールド増幅",double:"連撃率",crit:"会心率",evade:"回避率"}[type];
+    name = `${label}Lv${lv}`;
+    stats[type] = lv * 3;
+  }else{
+    const stat = ["hp","atk","def","spd","luk"][rand(0,4)];
+    let grade = d>=25 ? "最上位" : d>=10 ? "上位" : "";
+    let mul = grade==="最上位" ? 4 : grade==="上位" ? 2.3 : 1;
+    const label = {hp:"HP",atk:"攻撃",def:"防御",spd:"素早さ",luk:"運"}[stat];
+    name = `${grade}${label}ルーン`;
+    stats[stat] = stat==="hp" ? Math.floor(power*8*mul) : Math.floor(power*mul);
+  }
+
+  return {
+    id:Date.now()+Math.random(),
+    name,
+    slot:"rune",
+    rarity,
+    stats,
+    special:makeSpecial(d,source),
+    price:Math.floor((power+10)*45)
+  };
+}
+
+function itemText(it){
+  let st = Object.entries(it.stats).map(([k,v])=>{
+    const n = {hp:"HP",atk:"攻撃",def:"防御",spd:"素早さ",luk:"運",crit:"会心率",double:"連撃率",evade:"回避率",exp:"経験値",gold:"ゴールド"}[k];
+    return `${n}+${v}${["crit","double","evade","exp","gold"].includes(k)?"%":""}`;
+  }).join(" / ");
+  return `【${it.rarity}】${it.name}<br><span class="small">${slotName[it.slot]||"ルーン"} / ${st}${specialText(it.special)}</span>`;
+}
+
+function enemy(d,floor){
+  if(floor===5){
+    return {
+      type:"boss",
+      name:`ダンジョン${d}のボス`,
+      hp:Math.floor(120*d*d*1.5),
+      atk:Math.floor(12*d*1.4),
+      def:Math.floor(5*d),
+      spd:Math.floor(4*d),
+      exp:Math.floor(30*d*1.8),
+      gold:Math.floor(40*d*2)
+    };
+  }
+
+  const isRare = chance(0.20);
+  if(isRare){
+    return {
+      type:"rare",
+      name:`レアモンスター`,
+      hp:Math.floor(90*d*d),
+      atk:Math.floor(10*d),
+      def:Math.floor(4*d),
+      spd:Math.floor(7*d),
+      exp:Math.floor(45*d),
+      gold:Math.floor(50*d)
+    };
+  }
+
+  const names = ["スライム","ゴブリン","ウルフ","コウモリ","リザード"];
+  return {
+    type:"normal",
+    name:names[rand(0,4)],
+    hp:Math.floor(35*d*d + rand(0,20*d)),
+    atk:Math.floor(6*d + rand(0,d)),
+    def:Math.floor(2*d),
+    spd:Math.floor(3*d),
+    exp:Math.floor(16*d),
+    gold:Math.floor(13*d)
+  };
+}
+
+function startDungeon(){
+  player.floor = 0;
+  player.inDungeon = true;
+  log(`ダンジョン${player.dungeon}に挑戦開始。`);
+  nextFloor();
+}
+
+function nextFloor(){
+  if(!player.inDungeon){
+    log("先にダンジョンへ挑戦してね。");
+    return;
+  }
+  player.floor++;
+  if(player.floor>5){
+    log("このダンジョンはクリア済み。");
     return;
   }
 
-  player.x = nx;
-  player.y = ny;
-
-  if (tile === "T") {
-    log("町に着いた。回復できる。");
-  } else if (tile === "b" || tile === "B") {
-    battle(true, tile);
-  } else {
-    if (Math.random() < 0.75) battle(false, tile);
-  }
-
-  draw();
-  autoSave();
+  const e = enemy(player.dungeon, player.floor);
+  battle(e);
+  render();
+  saveGame(false);
 }
 
-function enemyByTile(tile, boss = false) {
-  let base = 1;
-  let name = "スライム";
-
-  if (tile === "g") { base = 1; name = "スライム"; }
-  if (tile === "f") { base = 5; name = "森の魔物"; }
-  if (tile === "d") { base = 15; name = "砂漠の獣"; }
-  if (tile === "l") { base = 40; name = "溶岩ドラゴン"; }
-  if (tile === "b") { base = 25; name = "中ボス"; }
-  if (tile === "B") { base = 80; name = "魔王"; }
-
-  base *= player.area;
-
-  let hp = Math.floor(40 * base * Math.pow(1.18, base));
-  let atk = Math.floor(8 * base * Math.pow(1.08, base));
-  let exp = Math.floor(15 * base * Math.pow(1.16, base));
-  let gold = Math.floor(10 * base * Math.pow(1.14, base));
-
-  if (boss) {
-    hp *= 5;
-    atk *= 2;
-    exp *= 8;
-    gold *= 8;
-  }
-
-  return { name, hp, atk, exp, gold };
-}
-
-function battle(isBoss, tile) {
-  let enemy = enemyByTile(tile, isBoss);
-  let enemyHp = enemy.hp;
+function battle(e){
+  const s = getStats();
+  let php = s.hp;
+  let ehp = e.hp;
   let turn = 0;
 
-  while (enemyHp > 0 && player.hp > 0 && turn < 50) {
-    let dmg = Math.max(1, player.atk - Math.floor(enemy.atk * 0.15));
-    enemyHp -= dmg;
-
-    if (enemyHp <= 0) break;
-
-    let taken = Math.max(1, enemy.atk - player.def);
-    player.hp -= taken;
+  while(php>0 && ehp>0 && turn<80){
+    let playerFirst = s.spd >= e.spd || chance(0.5);
+    if(playerFirst){
+      ehp -= playerAttack(s,e);
+      if(ehp<=0)break;
+      php -= enemyAttack(s,e);
+    }else{
+      php -= enemyAttack(s,e);
+      if(php<=0)break;
+      ehp -= playerAttack(s,e);
+    }
     turn++;
   }
 
-  if (player.hp <= 0) {
-    player.hp = Math.floor(player.maxHp * 0.5);
-    player.x = 3;
-    player.y = 3;
-    log("負けた……町に戻された。HP半分で復活。");
+  if(php<=0){
+    player.inDungeon=false;
+    player.floor=0;
+    log(`敗北…… ${e.name}に負けた。`);
     return;
   }
 
-  player.exp += enemy.exp;
-  player.gold += enemy.gold;
-  player.kills++;
+  let expGain = Math.floor(e.exp * (1+s.expBonus/100));
+  let goldGain = Math.floor(e.gold * (1+s.goldBonus/100));
+  player.exp += expGain;
+  player.gold += goldGain;
 
-  log(`${enemy.name}を倒した！ EXP+${fmt(enemy.exp)} / 金+${fmt(enemy.gold)}`);
+  log(`${player.floor}階層：${e.name}撃破！ EXP+${expGain} / Gold+${goldGain}`);
 
-  levelUpCheck();
+  levelUp();
 
-  if (isBoss) {
-    player.area++;
-    player.atk = Math.floor(player.atk * 1.35);
-    player.maxHp = Math.floor(player.maxHp * 1.4);
-    player.hp = player.maxHp;
-    log(`ボス撃破！ エリア${player.area}解放！能力も上昇！`);
+  let baseDrop = e.type==="normal" ? 10 : e.type==="rare" ? 5 : 2;
+  let dropRate = Math.min(60, baseDrop + s.dropBonus);
+
+  if(chance(dropRate/100)){
+    const item = makeEquipment(player.dungeon,e.type);
+    player.bag.push(item);
+    log(`装備ドロップ！ ${item.name}`);
+  }else{
+    log(`ドロップなし。`);
+  }
+
+  if(e.type==="boss"){
+    player.inDungeon=false;
+    if(player.dungeon===player.unlocked){
+      player.unlocked++;
+      log(`ダンジョン${player.dungeon}クリア！ ダンジョン${player.unlocked}解放！`);
+    }else{
+      log(`ダンジョン${player.dungeon}を再クリア。`);
+    }
   }
 }
 
-function levelUpCheck() {
-  let count = 0;
+function playerAttack(s,e){
+  let dmg = Math.max(1, s.atk - e.def);
+  if(chance(s.crit/100))dmg *= 2;
+  if(chance(s.double/100))dmg += Math.max(1, s.atk - e.def);
+  return Math.floor(dmg);
+}
 
-  while (player.exp >= player.nextExp) {
+function enemyAttack(s,e){
+  if(chance(s.evade/100))return 0;
+  return Math.max(1, e.atk - s.def);
+}
+
+function levelUp(){
+  let up = 0;
+  while(player.exp >= player.nextExp){
     player.exp -= player.nextExp;
-    player.level++;
-    player.points += 3;
-
-    player.maxHp = Math.floor(player.maxHp * 1.08 + 20);
-    player.atk = Math.floor(player.atk * 1.07 + 5);
-    player.def = Math.floor(player.def * 1.05 + 2);
-    player.hp = player.maxHp;
-
-    player.nextExp = Math.floor(player.nextExp * 1.35 + 30);
-    count++;
+    player.lv++;
+    player.point++;
+    player.nextExp = Math.floor(player.nextExp * 1.18 + 10);
+    up++;
   }
-
-  if (count > 0) {
-    log(`${count}レベルアップ！ Lv.${fmt(player.level)}！ 強化P+${count * 3}`);
-  }
+  if(up>0)log(`${up}レベルアップ！ ステータスポイント+${up}`);
 }
 
-function addStat(type) {
-  if (player.points <= 0) {
-    log("強化ポイントが足りない。");
+function addStat(type){
+  if(player.point<=0){
+    log("ステータスポイントが足りない。");
     return;
   }
-
-  player.points--;
-
-  if (type === "atk") {
-    player.atk = Math.floor(player.atk * 1.18 + 10);
-    log("攻撃力を強化した！");
-  }
-
-  if (type === "hp") {
-    player.maxHp = Math.floor(player.maxHp * 1.25 + 50);
-    player.hp = player.maxHp;
-    log("最大HPを強化した！");
-  }
-
-  if (type === "def") {
-    player.def = Math.floor(player.def * 1.2 + 5);
-    log("防御力を強化した！");
-  }
-
-  draw();
-  autoSave();
+  player.point--;
+  if(type==="hp")player.base.hp += 20;
+  if(type==="atk")player.base.atk += 3;
+  if(type==="def")player.base.def += 2;
+  if(type==="spd")player.base.spd += 2;
+  if(type==="luk")player.base.luk += 1;
+  render();
+  saveGame(false);
 }
 
-function healTown() {
-  if (getTile(player.x, player.y) !== "T") {
-    log("町の上でしか回復できない。");
+function equipItem(index){
+  const it = player.bag[index];
+  let target = it.slot;
+
+  if(target==="rune"){
+    target = runeSlots.find(s=>!player.equip[s]) || "slot1";
+  }
+
+  const old = player.equip[target];
+  player.equip[target] = it;
+  player.bag.splice(index,1);
+  if(old)player.bag.push(old);
+
+  log(`${it.name}を装備した。`);
+  render();
+  saveGame(false);
+}
+
+function sellItem(index){
+  const it = player.bag[index];
+  player.gold += Math.floor(it.price/3);
+  player.bag.splice(index,1);
+  log(`${it.name}を売却した。`);
+  render();
+  saveGame(false);
+}
+
+function openShop(){
+  player.shop = [];
+  for(let i=0;i<5;i++){
+    let it = makeEquipment(player.unlocked,"shop");
+    it.name = "店売り " + it.name;
+    for(let k in it.stats)it.stats[k] = Math.floor(it.stats[k]*0.55);
+    it.price *= 3;
+    player.shop.push(it);
+  }
+  log("ショップの商品を更新した。");
+  render();
+}
+
+function buyItem(i){
+  const it = player.shop[i];
+  if(player.gold < it.price){
+    log("ゴールドが足りない。");
     return;
   }
-
-  player.hp = player.maxHp;
-  log("全回復した！");
-  draw();
-  autoSave();
+  player.gold -= it.price;
+  player.bag.push(it);
+  player.shop.splice(i,1);
+  log(`${it.name}を購入した。`);
+  render();
+  saveGame(false);
 }
 
-function saveGame() {
+function selectDungeon(d){
+  player.dungeon = d;
+  player.inDungeon = false;
+  player.floor = 0;
+  log(`ダンジョン${d}を選択した。`);
+  render();
+}
+
+function render(){
+  const s = getStats();
+  document.getElementById("status").innerHTML = `
+    <b>Lv.${player.lv}</b> / EXP ${fmt(player.exp)} / ${fmt(player.nextExp)} / Gold ${fmt(player.gold)}<br>
+    HP:${fmt(s.hp)} 攻撃:${fmt(s.atk)} 防御:${fmt(s.def)} 素早さ:${fmt(s.spd)} 運:${fmt(s.luk)}<br>
+    会心率:${s.crit.toFixed(2)}% / 連撃率:${s.double.toFixed(2)}% / 回避率:${s.evade.toFixed(2)}% / ドロップ補正:+${s.dropBonus.toFixed(2)}%<br>
+    ステータスポイント:${player.point} / 選択中:ダンジョン${player.dungeon} / 解放:${player.unlocked} / 階層:${player.floor}
+  `;
+
+  let dg = "";
+  for(let i=1;i<=player.unlocked;i++){
+    dg += `<button onclick="selectDungeon(${i})" ${player.dungeon===i?"class='purple'":""}>ダンジョン${i}</button>`;
+  }
+  document.getElementById("dungeons").innerHTML = dg;
+
+  let eq = "";
+  for(let slot in player.equip){
+    eq += `<div class="item"><b>${slotName[slot]}</b><br>${player.equip[slot]?itemText(player.equip[slot]):"<span class='small'>未装備</span>"}</div>`;
+  }
+  document.getElementById("equips").innerHTML = eq;
+
+  let bag = "";
+  if(player.bag.length===0)bag = "<span class='small'>バッグは空</span>";
+  player.bag.forEach((it,i)=>{
+    bag += `<div class="item">${itemText(it)}<br>
+      <button onclick="equipItem(${i})">装備</button>
+      <button onclick="sellItem(${i})">売却 ${Math.floor(it.price/3)}G</button>
+    </div>`;
+  });
+  document.getElementById("bag").innerHTML = bag;
+
+  let shop = "";
+  if(player.shop.length===0)shop = "<span class='small'>ショップ更新を押すと商品が出ます</span>";
+  player.shop.forEach((it,i)=>{
+    shop += `<div class="item">${itemText(it)}<br>
+      <button onclick="buyItem(${i})">購入 ${it.price}G</button>
+    </div>`;
+  });
+  document.getElementById("shop").innerHTML = shop;
+}
+
+function saveGame(show=true){
   localStorage.setItem(SAVE_KEY, JSON.stringify(player));
-  log("セーブした！");
+  if(show)log("セーブした。");
 }
 
-function autoSave() {
-  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
-}
-
-function loadGame() {
-  const data = localStorage.getItem(SAVE_KEY);
-  if (data) {
-    player = JSON.parse(data);
+function loadGame(){
+  const d = localStorage.getItem(SAVE_KEY);
+  if(d){
+    player = JSON.parse(d);
     log("セーブデータを読み込んだ。");
-  } else {
-    log("ゲーム開始！敵に触れてレベルを爆上げしよう。");
+  }else{
+    log("ゲーム開始。まずはダンジョン1へ挑戦！");
+    openShop();
   }
 }
 
-function resetGame() {
-  if (!confirm("本当にデータを消す？")) return;
+function resetGame(){
+  if(!confirm("本当にデータを消す？"))return;
   localStorage.removeItem(SAVE_KEY);
   location.reload();
 }
 
 loadGame();
-draw();
+render();
 </script>
 </body>
 </html>
