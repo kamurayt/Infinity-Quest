@@ -3,230 +3,343 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>インフレーションRPG</title>
+<title>キノコ装備伝説</title>
 <style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    background: #111;
-    color: white;
-    text-align: center;
-  }
-  .game {
-    max-width: 430px;
-    margin: auto;
-    padding: 16px;
-  }
-  .box {
-    background: #222;
-    border: 2px solid #444;
-    border-radius: 12px;
-    padding: 14px;
-    margin: 10px 0;
-  }
-  button {
-    width: 100%;
-    padding: 14px;
-    margin: 6px 0;
-    font-size: 18px;
-    border: none;
-    border-radius: 10px;
-    background: #4caf50;
-    color: white;
-    font-weight: bold;
-  }
-  button:active {
-    transform: scale(0.97);
-  }
-  .danger {
-    background: #e53935;
-  }
-  .gold {
-    color: #ffd54f;
-  }
-  .hpbar {
-    width: 100%;
-    height: 22px;
-    background: #555;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .hp {
-    height: 100%;
-    background: #e53935;
-    width: 100%;
-  }
+body{margin:0;background:#111;color:#fff;font-family:sans-serif}
+.app{max-width:480px;margin:auto;padding:12px}
+.box{background:#1d1d1d;border:1px solid #444;border-radius:12px;padding:12px;margin:10px 0}
+button{width:100%;padding:12px;margin:5px 0;border:0;border-radius:10px;background:#35a853;color:white;font-weight:bold;font-size:16px}
+button:active{transform:scale(.97)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.small{font-size:13px;color:#ccc}
+.hpbar{height:18px;background:#555;border-radius:10px;overflow:hidden}
+.hp{height:100%;background:#e53935;width:100%}
+.item{padding:6px;border-bottom:1px solid #333}
+.N{color:#aaa}.R{color:#38d66b}.SR{color:#49a7ff}.SSR{color:#b366ff}.UR{color:#ffd54f}
+.LR{color:#ff5555}.MR{color:#00ffff}.EX{color:#ff77cc}.LEGEND{color:#ff9900}
+.MYTHIC{color:#66ffff}.ANCIENT{color:#00aa66}.DIVINE{color:#eee8aa}.CELESTIAL{color:#87cefa}
+.ETERNAL{color:#c0a000}.GOD{color:#ff44ff;font-weight:bold}
 </style>
 </head>
 <body>
+<div class="app">
+<h1>🍄 キノコ装備伝説</h1>
 
-<div class="game">
-  <h1>インフレーションRPG</h1>
+<div class="box">
+<h2>プレイヤー</h2>
+<p>Lv：<span id="lv"></span></p>
+<p>HP：<span id="hp"></span></p>
+<p>攻撃：<span id="atk"></span> / 防御：<span id="def"></span></p>
+<p>会心：<span id="crit"></span>% / 連撃：<span id="combo"></span>% / 攻速：<span id="speed"></span>%</p>
+<p>ゴールド：<span id="gold"></span>G</p>
+<p>ガチャ石：<span id="stone"></span></p>
+</div>
 
-  <div class="box">
-    <h2>プレイヤー</h2>
-    <p>Lv：<span id="level">1</span></p>
-    <p>経験値：<span id="exp">0</span> / <span id="needExp">10</span></p>
-    <p>攻撃力：<span id="atk">10</span></p>
-    <p class="gold">ゴールド：<span id="gold">0</span>G</p>
-  </div>
+<div class="box">
+<h2>ステージ <span id="stage"></span></h2>
+<h3 id="enemyName"></h3>
+<p>敵HP：<span id="enemyHp"></span> / <span id="enemyMaxHp"></span></p>
+<div class="hpbar"><div class="hp" id="enemyBar"></div></div>
+<p class="small" id="battleLog"></p>
+</div>
 
-  <div class="box">
-    <h2>ステージ <span id="stage">1</span></h2>
-    <h3 id="enemyName">スライム</h3>
-    <p>敵HP：<span id="enemyHp">30</span> / <span id="enemyMaxHp">30</span></p>
-    <div class="hpbar">
-      <div class="hp" id="enemyHpBar"></div>
-    </div>
-  </div>
+<div class="box">
+<h2>ガチャ Lv.<span id="gachaLv"></span></h2>
+<p>強化費用：<span id="gachaCost"></span>G</p>
+<button onclick="upgradeGacha()">ガチャLvを上げる</button>
+<div class="grid">
+<button onclick="drawGacha(1)">1回ガチャ</button>
+<button onclick="drawGacha(10)">10回ガチャ</button>
+<button onclick="drawGacha(50)">50回ガチャ</button>
+<button onclick="drawGacha(100)">100回ガチャ</button>
+</div>
+<p class="small">1回：ガチャ石10個</p>
+</div>
 
-  <div class="box">
-    <button onclick="attackEnemy()">攻撃する</button>
-    <button onclick="autoBattle()">10回攻撃</button>
-    <button onclick="upgradeAtk()">攻撃力強化</button>
-    <button class="danger" onclick="resetGame()">データリセット</button>
-  </div>
+<div class="box">
+<h2>CPU対戦</h2>
+<p>CPUランク：<span id="cpuRank"></span></p>
+<button onclick="fightCpu()">CPUに挑戦</button>
+<p class="small" id="cpuLog"></p>
+</div>
 
-  <div class="box">
-    <p id="log">冒険開始！</p>
-  </div>
+<div class="box">
+<h2>装備</h2>
+<div id="equipList"></div>
+</div>
+
+<div class="box">
+<h2>最近出た装備</h2>
+<div id="result"></div>
+</div>
+
+<div class="box">
+<button style="background:#d33" onclick="resetGame()">データリセット</button>
+</div>
 </div>
 
 <script>
-let player = {
-  level: 1,
-  exp: 0,
-  needExp: 10,
-  atk: 10,
-  gold: 0,
-  stage: 1
+const parts=["頭","体","足","腕","武器","背飾り","羽","オーラ","ペット"];
+const effects=["HP上昇","攻撃力上昇","防御力上昇","会心率上昇","連撃率上昇","攻撃速度上昇"];
+
+const rarities=[
+["N",45,1],["R",25,1.4],["SR",14,2],["SSR",8,3],["UR",4,5],
+["LR",2,8],["MR",1,13],["EX",0.5,20],["LEGEND",0.25,32],["MYTHIC",0.12,50],
+["ANCIENT",0.07,80],["DIVINE",0.03,130],["CELESTIAL",0.015,210],["ETERNAL",0.01,350],["GOD",0.005,700]
+];
+
+let player={
+lv:1, exp:0, gold:0, stone:50, stage:1, gachaLv:1, cpuRank:1,
+equips:{}
 };
 
-let enemy = {
-  name: "スライム",
-  hp: 30,
-  maxHp: 30
-};
+let enemy={name:"",hp:0,maxHp:0};
 
-function format(num) {
-  if (num >= 100000000) return (num / 100000000).toFixed(2) + "億";
-  if (num >= 10000) return (num / 10000).toFixed(2) + "万";
-  return Math.floor(num);
+parts.forEach(p=>{ if(!player.equips[p]) player.equips[p]=null; });
+
+function fmt(n){
+ if(n>=1e12)return(n/1e12).toFixed(2)+"兆";
+ if(n>=1e8)return(n/1e8).toFixed(2)+"億";
+ if(n>=1e4)return(n/1e4).toFixed(2)+"万";
+ return Math.floor(n);
 }
 
-function createEnemy() {
-  let isBoss = player.stage % 10 === 0;
-
-  enemy.maxHp = Math.floor(30 * Math.pow(1.25, player.stage - 1));
-
-  if (isBoss) {
-    enemy.name = "ボスモンスター";
-    enemy.maxHp *= 5;
-  } else {
-    enemy.name = "モンスター";
-  }
-
-  enemy.hp = enemy.maxHp;
+function unlockedRarities(){
+ let max=2;
+ if(player.gachaLv>=3)max=3;
+ if(player.gachaLv>=5)max=4;
+ if(player.gachaLv>=8)max=5;
+ if(player.gachaLv>=12)max=6;
+ if(player.gachaLv>=18)max=7;
+ if(player.gachaLv>=25)max=8;
+ if(player.gachaLv>=35)max=9;
+ if(player.gachaLv>=50)max=10;
+ if(player.gachaLv>=70)max=11;
+ if(player.gachaLv>=95)max=12;
+ if(player.gachaLv>=125)max=13;
+ if(player.gachaLv>=160)max=14;
+ if(player.gachaLv>=200)max=15;
+ return rarities.slice(0,max);
 }
 
-function attackEnemy() {
-  enemy.hp -= player.atk;
-
-  if (enemy.hp <= 0) {
-    defeatEnemy();
-  }
-
-  update();
-  saveGame();
+function pickRarity(){
+ const list=unlockedRarities();
+ let total=list.reduce((a,b)=>a+b[1],0);
+ let r=Math.random()*total;
+ for(const x of list){
+   r-=x[1];
+   if(r<=0)return x;
+ }
+ return list[0];
 }
 
-function autoBattle() {
-  for (let i = 0; i < 10; i++) {
-    attackEnemy();
-  }
+function makeItem(){
+ const part=parts[Math.floor(Math.random()*parts.length)];
+ const r=pickRarity();
+ const base=Math.pow(player.gachaLv,1.35)*10*r[2];
+
+ const item={
+  part,
+  rarity:r[0],
+  atk:Math.floor(base*(0.6+Math.random())),
+  hp:Math.floor(base*5*(0.6+Math.random())),
+  def:Math.floor(base*0.5*(0.6+Math.random())),
+  effectType:effects[Math.floor(Math.random()*effects.length)],
+  effectValue:Math.floor((1+Math.random()*4)*r[2])
+ };
+ return item;
 }
 
-function defeatEnemy() {
-  let expGain = Math.floor(5 * Math.pow(1.18, player.stage));
-  let goldGain = Math.floor(3 * Math.pow(1.15, player.stage));
+function itemPower(i){
+ return i.atk*3+i.hp+i.def*4+i.effectValue*20;
+}
 
-  if (player.stage % 10 === 0) {
-    expGain *= 5;
-    goldGain *= 5;
+function equipItem(item){
+ const old=player.equips[item.part];
+ if(!old || itemPower(item)>itemPower(old)){
+  player.equips[item.part]=item;
+  return true;
+ }
+ return false;
+}
+
+function getStats(){
+ let s={hp:100,atk:10,def:5,crit:5,combo:3,speed:100};
+ s.hp+=player.lv*30;
+ s.atk+=player.lv*8;
+ s.def+=player.lv*3;
+
+ for(const p of parts){
+  const i=player.equips[p];
+  if(!i)continue;
+  s.hp+=i.hp; s.atk+=i.atk; s.def+=i.def;
+
+  if(i.effectType==="HP上昇")s.hp*=1+i.effectValue/100;
+  if(i.effectType==="攻撃力上昇")s.atk*=1+i.effectValue/100;
+  if(i.effectType==="防御力上昇")s.def*=1+i.effectValue/100;
+  if(i.effectType==="会心率上昇")s.crit+=i.effectValue;
+  if(i.effectType==="連撃率上昇")s.combo+=i.effectValue;
+  if(i.effectType==="攻撃速度上昇")s.speed+=i.effectValue;
+ }
+ return {
+  hp:Math.floor(s.hp), atk:Math.floor(s.atk), def:Math.floor(s.def),
+  crit:Math.min(80,Math.floor(s.crit)),
+  combo:Math.min(80,Math.floor(s.combo)),
+  speed:Math.floor(s.speed)
+ };
+}
+
+function createEnemy(){
+ const boss=player.stage%10===0;
+ enemy.maxHp=Math.floor(60*Math.pow(1.18,player.stage));
+ if(boss)enemy.maxHp*=5;
+ enemy.hp=enemy.maxHp;
+ enemy.name=boss?"巨大キノコボス":"森のモンスター";
+}
+
+function battleTick(){
+ const st=getStats();
+ let hit=st.atk;
+ if(Math.random()*100<st.crit)hit*=2;
+ if(Math.random()*100<st.combo)hit*=2;
+
+ enemy.hp-=hit;
+
+ if(enemy.hp<=0){
+  const gold=Math.floor(8*Math.pow(1.15,player.stage));
+  const stone=Math.floor(2+Math.random()*3+(player.stage/20));
+  player.gold+=gold;
+  player.stone+=stone;
+  player.exp+=5;
+
+  if(player.exp>=player.lv*10){
+   player.exp=0;
+   player.lv++;
   }
 
-  player.exp += expGain;
-  player.gold += goldGain;
-
-  document.getElementById("log").innerText =
-    enemy.name + "を倒した！ 経験値+" + format(expGain) + " / ゴールド+" + format(goldGain);
-
-  while (player.exp >= player.needExp) {
-    player.exp -= player.needExp;
-    player.level++;
-    player.atk = Math.floor(player.atk * 1.18 + 5);
-    player.needExp = Math.floor(player.needExp * 1.35);
-  }
+  document.getElementById("battleLog").innerText=
+   enemy.name+"撃破！ +" + fmt(gold)+"G / ガチャ石+"+fmt(stone);
 
   player.stage++;
   createEnemy();
+ }
+ update();
+ save();
 }
 
-function upgradeAtk() {
-  let cost = Math.floor(20 * Math.pow(1.3, player.level));
+function drawGacha(count){
+ const cost=count*10;
+ if(player.stone<10){
+  alert("ガチャ石が足りない！");
+  return;
+ }
+ const real=Math.min(count,Math.floor(player.stone/10));
+ player.stone-=real*10;
 
-  if (player.gold >= cost) {
-    player.gold -= cost;
-    player.atk = Math.floor(player.atk * 1.25 + 10);
-    document.getElementById("log").innerText =
-      "攻撃力を強化した！ -" + format(cost) + "G";
-  } else {
-    document.getElementById("log").innerText =
-      "ゴールドが足りない！ 必要：" + format(cost) + "G";
+ let html="";
+ for(let i=0;i<real;i++){
+  const item=makeItem();
+  const equipped=equipItem(item);
+  html+=`<div class="item ${item.rarity}">
+   ${equipped?"✅更新":"❌"} ${item.rarity} ${item.part}<br>
+   攻撃+${fmt(item.atk)} HP+${fmt(item.hp)} 防御+${fmt(item.def)}<br>
+   特殊効果：${item.effectType}${item.effectValue}%
+  </div>`;
+ }
+ document.getElementById("result").innerHTML=html;
+ update();
+ save();
+}
+
+function upgradeGacha(){
+ const cost=Math.floor(100*Math.pow(1.35,player.gachaLv));
+ if(player.gold<cost){
+  alert("ゴールドが足りない！");
+  return;
+ }
+ player.gold-=cost;
+ player.gachaLv++;
+ update();
+ save();
+}
+
+function fightCpu(){
+ const st=getStats();
+ const myPower=st.hp+st.atk*8+st.def*5+st.crit*50+st.combo*50+st.speed*20;
+ const cpuPower=Math.floor(500*Math.pow(1.22,player.cpuRank));
+
+ if(myPower>=cpuPower){
+  player.cpuRank++;
+  const reward=player.cpuRank*30;
+  player.stone+=reward;
+  document.getElementById("cpuLog").innerText="勝利！ ガチャ石+"+reward;
+ }else{
+  const reward=Math.floor(player.cpuRank*5);
+  player.stone+=reward;
+  document.getElementById("cpuLog").innerText="敗北… ガチャ石+"+reward;
+ }
+ update();
+ save();
+}
+
+function update(){
+ const st=getStats();
+ document.getElementById("lv").innerText=player.lv;
+ document.getElementById("hp").innerText=fmt(st.hp);
+ document.getElementById("atk").innerText=fmt(st.atk);
+ document.getElementById("def").innerText=fmt(st.def);
+ document.getElementById("crit").innerText=st.crit;
+ document.getElementById("combo").innerText=st.combo;
+ document.getElementById("speed").innerText=st.speed;
+ document.getElementById("gold").innerText=fmt(player.gold);
+ document.getElementById("stone").innerText=fmt(player.stone);
+ document.getElementById("stage").innerText=player.stage;
+ document.getElementById("gachaLv").innerText=player.gachaLv;
+ document.getElementById("cpuRank").innerText=player.cpuRank;
+ document.getElementById("gachaCost").innerText=fmt(Math.floor(100*Math.pow(1.35,player.gachaLv)));
+
+ document.getElementById("enemyName").innerText=enemy.name;
+ document.getElementById("enemyHp").innerText=fmt(Math.max(0,enemy.hp));
+ document.getElementById("enemyMaxHp").innerText=fmt(enemy.maxHp);
+ document.getElementById("enemyBar").style.width=Math.max(0,enemy.hp/enemy.maxHp*100)+"%";
+
+ let ehtml="";
+ for(const p of parts){
+  const i=player.equips[p];
+  if(!i){
+   ehtml+=`<div class="item">${p}：なし</div>`;
+  }else{
+   ehtml+=`<div class="item ${i.rarity}">
+    ${p}：${i.rarity}<br>
+    攻撃+${fmt(i.atk)} HP+${fmt(i.hp)} 防御+${fmt(i.def)}<br>
+    ${i.effectType}${i.effectValue}%
+   </div>`;
   }
-
-  update();
-  saveGame();
+ }
+ document.getElementById("equipList").innerHTML=ehtml;
 }
 
-function update() {
-  document.getElementById("level").innerText = player.level;
-  document.getElementById("exp").innerText = format(player.exp);
-  document.getElementById("needExp").innerText = format(player.needExp);
-  document.getElementById("atk").innerText = format(player.atk);
-  document.getElementById("gold").innerText = format(player.gold);
-  document.getElementById("stage").innerText = player.stage;
-
-  document.getElementById("enemyName").innerText = enemy.name;
-  document.getElementById("enemyHp").innerText = format(Math.max(enemy.hp, 0));
-  document.getElementById("enemyMaxHp").innerText = format(enemy.maxHp);
-
-  let hpRate = Math.max(enemy.hp / enemy.maxHp * 100, 0);
-  document.getElementById("enemyHpBar").style.width = hpRate + "%";
+function save(){
+ localStorage.setItem("kinokoEquipLegendSave",JSON.stringify(player));
 }
 
-function saveGame() {
-  localStorage.setItem("inflationRpgSave", JSON.stringify(player));
+function load(){
+ const s=localStorage.getItem("kinokoEquipLegendSave");
+ if(s)player=JSON.parse(s);
+ parts.forEach(p=>{ if(!player.equips[p]) player.equips[p]=null; });
+ createEnemy();
+ update();
 }
 
-function loadGame() {
-  let save = localStorage.getItem("inflationRpgSave");
-  if (save) {
-    player = JSON.parse(save);
-  }
-  createEnemy();
-  update();
+function resetGame(){
+ if(confirm("本当にリセットする？")){
+  localStorage.removeItem("kinokoEquipLegendSave");
+  location.reload();
+ }
 }
 
-function resetGame() {
-  if (confirm("本当にデータをリセットする？")) {
-    localStorage.removeItem("inflationRpgSave");
-    location.reload();
-  }
-}
-
-loadGame();
+load();
+setInterval(battleTick,1000);
 </script>
-
 </body>
 </html>
